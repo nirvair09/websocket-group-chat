@@ -1,4 +1,4 @@
-import createServer from "http";
+import { createServer } from 'node:http';
 import express from "express";
 import { Server } from "socket.io";
 
@@ -19,9 +19,9 @@ const roomName = "room1";
 
 io.on("connection", (socket) => {
     console.log("a user connected", socket.id);
-    console.log("socket info", socket);
 
     socket.on('joinRoom', async (userName) => {
+        socket.join(roomName);
         socket.to(roomName).emit("newUserJoined", userName)
     });
 
