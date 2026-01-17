@@ -15,32 +15,73 @@ app.get('/', (req, res) => {
     res.send("hello")
 });
 
-const roomName = "room1";
+// const roomName = "room1";
+
+const rooms = new Map();
 
 io.on("connection", (socket) => {
     console.log("a user connected", socket.id);
 
-    socket.on('joinRoom', async (userName) => {
-        socket.join(roomName);
-        socket.to(roomName).emit("newUserJoined", userName)
+    socket.on('createRoom', ({ roomId, userName }) => {
+        if (rooms.has(roomId)) {
+            socket.emit("roomAlreadyExists", roomId);
+            return;
+        }
+
+        rooms.set(roomId, { users: new Set() });
+        rooms.get(roomId).users.add(socket.id);
+
+        socket.join(roomId);
+        socket.emit('roomCreated', roomId);
+
+        console.log("room created", roomId);
     });
 
-    socket.on('chatMessage', async (message) => {
-        socket.to(roomName).emit('chatMessage', message);
+    socket.on('joinRoom', async ({ roomId, userName }) => {
+        if (!rooms.has(roomId)) {
+            socket.emit("roomDoesNotExist", roomId);
+            return;
+        }
+
+        rooms.get(roomId).users.add(socket.id);
+        socket.emit("roomJoined", roomId);
+        socket.to(roomId).emit("newUserJoined", userName);
+        console.log("user joined", roomId);
     });
 
-    socket.on('typing', async (userName) => {
-        socket.to(roomName).emit('typing', userName);
+    socket.on('chatMessage', async ({ roomId, message }) => {
+        socket.to(roomId).emit('chatMessage', message);
     });
 
-    socket.on('stopTyping', async (userName) => {
-        socket.to(roomName).emit('stopTyping', userName);
+    socket.on('typing', async ({ roomId, userName }) => {
+        socket.to(roomId).emit('typing', userName);
+    });
+
+    socket.on('stopTyping', async ({ roomId, userName }) => {
+        socket.to(roomId).emit('stopTyping', userName);
+    });
+
+    socket.on("disconnet", () => {
+        console.log("a user disconnected", socket.id);
+
+        for (const [roomId, room] of rooms.entries()) {
+            if (room.users.has(socket.id)) {
+                room.users.delete(socket.id);
+
+                if (room.users.size === 0) {
+                    rooms.delete(roomId);
+                    console.log("room deleted", roomId);
+                }
+            }
+        }
     });
 });
 
-io.on("disconnect", (socket) => {
-    console.log("a user disconnected", socket.id);
-});
+
+
+// io.on("disconnect", (socket) => {
+//     console.log("a user disconnected", socket.id);
+// });
 
 server.listen(3056, () => {
     console.log("server is running on port 3056")
