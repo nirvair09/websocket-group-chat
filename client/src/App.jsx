@@ -9,6 +9,9 @@ export default function App() {
     const [inputName, setInputName] = useState('');
     const [typers, setTypers] = useState([]);
 
+    const [roomId, setRoomId] = useState('');
+    const [mode, setMode] = useState('join'); //join||create
+
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
 
@@ -16,6 +19,19 @@ export default function App() {
         socket.current = connectWS();
 
         socket.current.on('connect', () => {
+            socket.current.on("roomCreated", (id) => {
+                console.log("Room created:", id);
+                setShowNamePopup(false);
+            });
+
+            socket.current.on("roomJoined", (id) => {
+                console.log("Joined room:", id);
+                setShowNamePopup(false);
+            });
+
+            socket.current.on("roomExists", () => alert("Room already exists!"));
+            socket.current.on("roomNotFound", () => alert("Room does not exist!"));
+
             socket.current.on('roomNotice', (userName) => {
                 console.log(`${userName} joined to group!`);
             });
@@ -26,7 +42,7 @@ export default function App() {
                 setMessages((prev) => [...prev, msg]);
             });
 
-            socket.current.on('typing', (userName) => {
+            socket.current.on('typing', ({ roomId, userName }) => {
                 setTypers((prev) => {
                     const isExist = prev.find((typer) => typer === userName);
                     if (!isExist) {
@@ -37,7 +53,7 @@ export default function App() {
                 });
             });
 
-            socket.current.on('stopTyping', (userName) => {
+            socket.current.on('stopTyping', ({ roomId, userName }) => {
                 setTypers((prev) => prev.filter((typer) => typer !== userName));
             });
         });
@@ -51,19 +67,20 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        if (text) {
-            socket.current.emit('typing', userName);
-            clearTimeout(timer.current);
-        }
+
+        if (!text || !roomId) return;
+
+        socket.current.emit('typing', { roomId, userName });
+        clearTimeout(timer.current);
 
         timer.current = setTimeout(() => {
-            socket.current.emit('stopTyping', userName);
+            socket.current.emit('stopTyping', { roomId, userName });
         }, 1000);
 
         return () => {
             clearTimeout(timer.current);
         };
-    }, [text, userName]);
+    }, [text, userName, roomId]);
 
     // FORMAT TIMESTAMP TO HH:MM FOR MESSAGES
     function formatTime(ts) {
@@ -76,14 +93,18 @@ export default function App() {
     // SUBMIT NAME TO GET STARTED, OPEN CHAT WINDOW WITH INITIAL MESSAGE
     function handleNameSubmit(e) {
         e.preventDefault();
-        const trimmed = inputName.trim();
-        if (!trimmed) return;
+        const trimmedName = inputName.trim();
+        const trimmedRoomId = roomId.trim();
+        if (!trimmedName || !trimmedRoomId) return;
 
-        // join room
-        socket.current.emit('joinRoom', trimmed);
+        setUserName(trimmedName);
 
-        setUserName(trimmed);
-        setShowNamePopup(false);
+        if (mode === 'join') {
+            socket.current.emit('joinRoom', ({ roomId: trimmedRoomId, userName: trimmedName }));
+        } else {
+            socket.current.emit('createRoom', ({ roomId: trimmedRoomId, userName: trimmedName }));
+        }
+
     }
 
     // SEND MESSAGE FUNCTION
@@ -101,7 +122,7 @@ export default function App() {
         setMessages((m) => [...m, msg]);
 
         // emit
-        socket.current.emit('chatMessage', msg);
+        socket.current.emit('chatMessage', { roomId, message: msg });
 
         setText('');
     }
@@ -116,31 +137,55 @@ export default function App() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-100 p-4 font-inter">
-            {/* ENTER YOUR NAME TO START CHATTING */}
+            {/* POP UP TO ENTER NAME AND ROOM ID */}
             {showNamePopup && (
                 <div className="fixed inset-0 flex items-center justify-center z-40">
-                    <div className="bg-white rounded-xl shadow-lg max-w-md p-6">
-                        <h1 className="text-xl font-semibold text-black">Enter your name</h1>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Enter your name to start chatting. This will be used to identify
-                        </p>
-                        <form onSubmit={handleNameSubmit} className="mt-4">
-                            <input
-                                autoFocus
-                                value={inputName}
-                                onChange={(e) => setInputName(e.target.value)}
-                                className="w-full border border-gray-200 rounded-md px-3 py-2 outline-green-500 placeholder-gray-400"
-                                placeholder="Your name (e.g. John Doe)"
-                            />
+                    <div className="bg-white rounded-xl shadow-lg max-w-md p-6 space-y-4">
+
+                        <h1 className="text-xl font-semibold">Join or Create Room</h1>
+
+                        <input
+                            value={inputName}
+                            onChange={(e) => setInputName(e.target.value)}
+                            className="w-full border border-gray-200 rounded-md px-3 py-2"
+                            placeholder="Enter your name"
+                        />
+
+                        <input
+                            value={roomId}
+                            onChange={(e) => setRoomId(e.target.value)}
+                            className="w-full border border-gray-200 rounded-md px-3 py-2"
+                            placeholder="Enter Room ID"
+                        />
+
+                        <div className="flex gap-3 mt-2">
                             <button
-                                type="submit"
-                                className="block ml-auto mt-3 px-4 py-1.5 rounded-full bg-green-500 text-white font-medium cursor-pointer">
-                                Continue
+                                type="button"
+                                onClick={() => setMode("create")}
+                                className={`py-2 px-4 rounded-md ${mode === 'create' ? 'bg-green-500 text-white' : 'bg-gray-100'}`}
+                            >
+                                Create Room
                             </button>
-                        </form>
+
+                            <button
+                                type="button"
+                                onClick={() => setMode("join")}
+                                className={`py-2 px-4 rounded-md ${mode === 'join' ? 'bg-green-500 text-white' : 'bg-gray-100'}`}
+                            >
+                                Join Room
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={handleNameSubmit}
+                            className="w-full mt-3 py-2 rounded-md bg-green-600 text-white font-medium"
+                        >
+                            Continue
+                        </button>
                     </div>
                 </div>
             )}
+
 
             {/* CHAT WINDOW */}
             {!showNamePopup && (
@@ -181,8 +226,8 @@ export default function App() {
                                     className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                                     <div
                                         className={`max-w-[78%] p-3 my-2 rounded-[18px] text-sm leading-5 shadow-sm ${mine
-                                                ? 'bg-[#DCF8C6] text-[#303030] rounded-br-2xl'
-                                                : 'bg-white text-[#303030] rounded-bl-2xl'
+                                            ? 'bg-[#DCF8C6] text-[#303030] rounded-br-2xl'
+                                            : 'bg-white text-[#303030] rounded-bl-2xl'
                                             }`}>
                                         <div className="break-words whitespace-pre-wrap">
                                             {m.text}
