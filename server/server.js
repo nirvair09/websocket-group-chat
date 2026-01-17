@@ -24,7 +24,7 @@ io.on("connection", (socket) => {
 
     socket.on('createRoom', ({ roomId, userName }) => {
         if (rooms.has(roomId)) {
-            socket.emit("roomAlreadyExists", roomId);
+            socket.emit("roomExists", roomId);
             return;
         }
 
@@ -33,19 +33,19 @@ io.on("connection", (socket) => {
 
         socket.join(roomId);
         socket.emit('roomCreated', roomId);
-
         console.log("room created", roomId);
     });
 
     socket.on('joinRoom', async ({ roomId, userName }) => {
         if (!rooms.has(roomId)) {
-            socket.emit("roomDoesNotExist", roomId);
+            socket.emit("roomNotFound", roomId);
             return;
         }
 
         rooms.get(roomId).users.add(socket.id);
+        socket.join(roomId);
         socket.emit("roomJoined", roomId);
-        socket.to(roomId).emit("newUserJoined", userName);
+        socket.to(roomId).emit("roomNotice", userName);
         console.log("user joined", roomId);
     });
 
@@ -54,14 +54,14 @@ io.on("connection", (socket) => {
     });
 
     socket.on('typing', async ({ roomId, userName }) => {
-        socket.to(roomId).emit('typing', userName);
+        socket.to(roomId).emit('typing', { roomId, userName });
     });
 
     socket.on('stopTyping', async ({ roomId, userName }) => {
-        socket.to(roomId).emit('stopTyping', userName);
+        socket.to(roomId).emit('stopTyping', { roomId, userName });
     });
 
-    socket.on("disconnet", () => {
+    socket.on("disconnect", () => {
         console.log("a user disconnected", socket.id);
 
         for (const [roomId, room] of rooms.entries()) {
