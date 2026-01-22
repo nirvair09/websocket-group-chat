@@ -83,6 +83,8 @@ io.on("connection", (socket) => {
 //     console.log("a user disconnected", socket.id);
 // });
 
-server.listen(3056, () => {
-    console.log("server is running on port 3056")
-})
+const PORT = process.env.PORT || 3056;
+
+server.listen(PORT, () => {
+    console.log("server listening on port", PORT);
+});
