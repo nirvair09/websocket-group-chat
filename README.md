@@ -1,57 +1,93 @@
-# 💬 Advanced Real-Time Group Chat Application
+# 💬 Real-Time Socket Chat Application
 
-## 🚀 Overview
-This is an **Advanced Real-time Group Chat Application** that goes beyond basic WebSocket implementations. It features dynamic room management, real-time presence awareness, and a scalable architecture designed for instant bidirectional communication.
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://websocket-group-chat.vercel.app/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.dot.io&logoColor=white)](https://socket.io/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-## 🎯 The Evolution: What's New?
-Initially a single-room demo, this project has evolved into a robust platform with:
-- **Dynamic Multi-Room Architecture**: Users are no longer confined to a single global room. They can create unique room IDs or join existing ones.
-- **Enhanced Presence Logic**: Real-time "Typing..." indicators now support multiple simultaneous users, providing a more lifelike conversation experience.
-- **Smart Room Cleanup**: The server automatically manages memory by disposing of empty rooms when the last user disconnects.
+An advanced real-time group chat platform featuring dynamic room management, live presence indicators, and a clean, responsive interface.
 
-## 🏗️ Advanced Technical Architecture
-The application leverages a high-performance **MERN-inspired stack** with a focus on real-time event-driven logic.
+---
 
-### ⚙️ Server-Side (Node.js & Socket.io)
-- **Isolated Namespaces**: Uses `socket.join(roomId)` and `socket.to(roomId).emit()` to ensure messages and events (like typing) stay within their respective boundaries.
-- **In-Memory Session Management**: Employs a `Map` of `Rooms`, where each room maintains a `Set` of active `socketIds`. This allows for $O(1)$ lookups and efficient cleanup.
-- **Auto-Garbage Collection**: Logic implemented in the `disconnect` handler ensures the server doesn't leak memory by retaining empty room objects.
+## 📸 Preview
 
-### 🖥️ Client-Side (React & TailwindCSS)
-- **Reactive State Flow**: Uses React 19 hooks to manage typers, messages, and connection states seamlessly.
-- **Debounced Interaction**: Implemented typing detection using a timer-based `useEffect` loop to reduce socket noise while maintaining high responsiveness.
-- **Adaptive UI**: A responsive interface built with `TailwindCSS` that handles both the setup (Join/Create) and the active chat experience.
+![Chat App Screenshot](./assets/readme/screenshot.png)
 
-## 🔄 How It Works (The "Why" it's Advanced)
-1.  **Handshake & Verification**: Unlike simple setups, the client first verifies if a room exists before joining, or if it's already taken when creating.
-2.  **RoomNotice System**: Automatically notifies existing members when a new user enters, enhancing the "group" feel.
-3.  **Bidirectional Flow**: 
-    - **Messaging**: `User -> Server -> (Specific Room) -> Other Users`.
-    - **Presence**: `Typing Status -> Server -> (Room) -> Dynamic List of Typers`.
+---
 
-## 🛠️ Setup & Installation
+## 🚀 Live Demo
 
-### Prerequisites
-- Node.js (v18+) installed.
+Check out the live application here: **[https://websocket-group-chat.vercel.app/](https://websocket-group-chat.vercel.app/)**
 
-### 1. Start the Server
+---
+
+## ✨ Key Features
+
+- 🏠 **Dynamic Rooms**: Create your own room or join an existing one using unique Room IDs.
+- ⚡ **Real-Time Messaging**: Instant bidirectional communication powered by Socket.io.
+- ✍️ **Presence Indicators**: See who's currently typing in the room.
+- 🧹 **Automatic Cleanup**: Serverside logic automatically deletes empty rooms to optimize memory.
+- 🎨 **Premium UI**: Modern, glassmorphism-inspired design built with Tailwind CSS.
+- 📱 **Fully Responsive**: Works seamlessly on mobile, tablet, and desktop devices.
+
+---
+
+## 🛠️ Technical Stack
+
+- **Frontend**: React 19, Tailwind CSS, Vite
+- **Backend**: Node.js, Express, Socket.io
+- **Deployment**: Vercel (Frontend), Render (Backend)
+
+---
+
+## 🔨 Setup & Installation
+
+Follow these steps to run the project locally.
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/nirvair09/websocket-group-chat.git
+cd websocket-group-chat
+```
+
+### 2. Configure the Server
 ```bash
 cd server
 npm install
-npm run run # Runs on http://localhost:3056
+# Ensure you have a .env file with PORT=3056
+npm run run
 ```
 
-### 2. Start the Client
+### 3. Configure the Client
 ```bash
 cd client
 npm install
-npm run dev # Runs on http://localhost:5173
+# Ensure you have a .env file with VITE_BACKEND_URL=http://localhost:3056
+npm run dev
 ```
 
-## 🧪 Key Features Implemented
-- ✅ **Dynamic Room Routing**: Create or join any room ID instantly.
-- ✅ **Multi-User Typing Detection**: Tracks specifically who is typing in real-time.
-- ✅ **Clean Session Management**: Automatic cleanup of empty rooms.
-- ✅ **Premium UI/UX**: Centered chat layout, WhatsApp-style bubbles, and responsive design.
-- ✅ **Error Handling**: Alerts for "Room Not Found" or "Room Exists" scenarios.
+The application will be available at `http://localhost:5173`.
 
+---
+
+## 🏗️ Project Structure
+
+```text
+.
+├── client/          # React frontend (Vite)
+│   ├── src/        # Components, styles, and logic
+│   └── public/      # Static assets
+├── server/          # Node.js backend
+│   └── server.js    # Socket.io implementation
+└── assets/          # Project documentation assets
+```
+
+---
+
+## 📜 License
+
+This project is open-source and available under the [ISC License](LICENSE).
+
+---
+
+Developed with ❤️ by [Rup](https://github.com/nirvair09)
